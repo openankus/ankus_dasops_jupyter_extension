@@ -1,0 +1,118 @@
+@charset "uft-8";
+
+body {font-family: 'Noto Sans', sans-serif;}
+
+.ankus-container .inputLogin {
+    width: 158px;
+    height: 30px;
+    margin-left: 15px;
+    margin-bottom: 10px;
+    padding-left: 30px;
+    background-repeat: no-repeat;
+    background-position: 6%;
+    font-size: 14px;
+    border: 1px solid var(--jp-border-color2);
+    background-color: var(--jp-layout-color1);
+    color: var(--jp-ui-font-color0);
+}
+.ankus-container .inputLogin:focus {
+    outline: none;
+    border-color: #6495ED;
+}
+
+.ankus-container .inpID {
+    margin-top: 20px;
+    background-image: url('./images/id.svg');
+}
+.ankus-container .inpID:focus {
+    background-image: url('./images/id_f.svg');
+}
+
+.ankus-container .inpPw {
+    background-image: url('./images/pw.svg');
+}
+.ankus-container .inpPw:focus {
+    background-image: url('./images/pw_f.svg');
+}
+
+.ankus-container .inputUrl {
+    padding-left: 25px;
+    margin-top: 20px;
+    background-image: url('./images/web.svg');
+    background-position: 3%;
+}
+.ankus-container .inputUrl:focus {
+    background-image: url('./images/web_f.svg');
+}
+
+.ankus-container .remstyle {
+    margin-left: 12px;
+    font-size: 12px;
+    vertical-align: center;
+    color: var(--jp-ui-font-color0);
+}
+.ankus-container .remstyle label {
+    display: flex;
+    align-items: center;
+}
+
+.ankus-container .btnLogin {
+    width: 180px;
+    height: 30px;
+    background-color: var(--ankus-control-color);
+    color: white;
+    font-size: 14px;
+    font-weight: 100;
+    margin-top: 34px;
+    margin-left: 15px;
+    border: none;
+    cursor: pointer;
+}
+.ankus-container .btnLogin:disabled {
+    background-color: var(--ankus-disable-color);
+    cursor: auto;
+}
+
+.ankus-container .errmsg {
+    margin-left: 70px;
+    margin-top: 8px;
+    color: red;
+    font-size: 12px;
+}
+
+.ankus-container .inputUrl {
+    font-size: 14px;
+    background-color: transparent;
+    border: 1px solid var(--jp-border-color2);
+    width: 220px;
+    height: 27px;
+    margin: 20px 0 5px 0;
+    display: flex;
+    align-items: center;
+}
+
+.ankus-container .inputUrl input:focus {
+    border-color: #6495ED;
+}
+
+.ankus-sidebar-icon {
+    width: 29px;
+    padding: 0;
+    margin: 0;
+}
+
+.ankus-term-title-btn {
+    background-color: transparent;
+    color: var(--jp-ui-font-color1);
+    height: 20px;
+    border: none;
+    padding: 0 5px;
+    margin: 0;
+    vertical-align: middle;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .ankus-term-title-btn:hover {
+    color: var(--jp-ui-font-color2);
+}

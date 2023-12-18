@@ -1,0 +1,67 @@
+/*
+    See the JupyterLab Developer Guide for useful CSS Patterns:
+
+    https://jupyterlab.readthedocs.io/en/stable/developer/css.html
+*/
+
+:root {
+    --ankus-control-color: #4682B4;
+    --ankus-disable-color: #c0c0c0;
+}
+
+.ankus-loading-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.align-vt-center {
+    align-items: center;
+    display: flex;
+}
+
+.ankus-completer-new-term {
+    width : calc(100% - 4px);
+    height : 25px;
+    border : 1px solid #D3D3D3;
+    color : #000080;
+    background-color : white;
+    margin: 1px;
+    align-items: center;
+    display: flex; 
+    justify-content: center; 
+}  
+.ankus-completer-new-term:hover {
+    background-color: #DCDCDC;
+    cursor: pointer;
+}
+
+.ankus-container {
+    background-color: var(--jp-layout-color1);
+    color: var(--jp-ui-font-color1);
+}
+
+.ankus-ui-text {
+    color: var(--ankus-control-color);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.ankus-icon-btn {
+    background-color: transparent;
+    color: var(--ankus-control-color);
+    border: none;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+.ankus-icon-btn:hover {
+    background-color: var(--jp-layout-color2);
+}
+.ankus-icon-btn:disabled {
+    color: var(--ankus-disable-color);
+    cursor: auto;
+}

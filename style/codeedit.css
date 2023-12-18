@@ -1,0 +1,146 @@
+@charset "uft-8";
+
+.ankus-editor {
+    /* margin: 0 auto;   */
+    width: calc(100% - 40px);
+    height: calc(100% - 40px);
+    /* max-height: 90%; */
+    padding: 20px;
+    background: transparent;
+}
+
+
+.ankus-editor .tab_title.select_tab {
+    text-decoration: underline;
+    font-weight: bold;
+    font-size: 15px;
+}
+.ankus-editor .tab_title {
+    text-decoration: none;
+    font-weight: normal;
+    font-size: 13px;
+    margin: 5px;
+    cursor: pointer;
+    color: var(--jp-ui-font-color1);
+}
+.ankus-editor .tab_title:hover {
+    color: var(--jp-ui-font-color3);
+}
+
+/* .editor-wrap p {
+    font-size: 14px;
+    font-weight: 600;
+    color: #525252;
+}
+ */
+ 
+ .ankus-editor .title-wrap button {
+    background-color: var(--ankus-control-color);
+    cursor: pointer;
+    border: none;
+    color: white;
+    margin: 3px;
+    padding: 3px 5px;
+    font-size: 12px;
+}
+
+.tag-wrap {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    margin-top: 6px;
+}
+.tag-wrap input {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    border: 1px solid #707070;
+    border-right: none;
+    padding-left: 8px;
+}
+.tag-wrap input::placeholder {
+    font-size: 12px;
+}
+
+.tag-wrap button {
+    width: 30px;
+    height: 30px;
+    box-sizing: border-box;
+    border: none;
+    background-color: #001949;
+    background-image: url('./images/tag_plus.svg');
+    background-repeat: no-repeat;
+    background-position: center;
+    cursor: pointer;
+}
+.tag-wrap button:disabled {
+    background-color: #cccccc;
+    cursor: auto;
+}
+
+    .tag-box {
+    width: 100%;
+    height: 80px;
+    background-color: #e8e8e8;
+    padding-left: 7px;
+    padding-top: 7px;
+    box-sizing: border-box;
+    overflow: auto;
+}
+
+.element-tag {
+    display: inline-block;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    background-color: #898989;
+    color: #fff;
+    padding: 3px 5px;
+    border-radius: 5px;
+    font-size: small;
+}
+
+.save-wrap {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: right;
+}
+.save-wrap button:first-child {
+    width: 60px;
+    height: 26px;
+    background-color: #cccccc;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.save-wrap button:last-child {
+    width: 52px;
+    height: 26px;
+    color: #fff;
+    background-color: #3e3e3e;
+    border: none;
+    border-radius: 5px;
+    margin-left: 8px;
+    cursor: pointer;
+}
+
+.ankus-editor .btn-save:disabled {
+    background-color: var(--ankus-disable-color);
+    cursor: auto;
+}
+
+.ankus-statusbar {
+    font-size: 12px;
+    font-weight: 400;
+    margin-top: 10px;
+}
+
+.button-close {
+    width: 13px;
+    margin-left: 3px;
+    display: inline-block;
+}
+.button-close:hover {
+    cursor: pointer;
+}
+

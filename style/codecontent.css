@@ -1,0 +1,103 @@
+@charset "uft-8";
+
+.ankus-code-wrap {
+    height: calc(100% - 90px);
+    margin-top: 10px;
+}
+
+.ankus-code-wrap .tbl-container {
+    height: calc(100% - 20px);
+    width: 100%;
+    overflow: auto;      
+}
+
+.ankus-cod-cel-tbl {
+    width: 100%;
+    resize: none;
+}
+
+.ankus-cod-cel-tbl tbody {
+    max-height: calc(100% - 50px); 
+    table-layout: fixed;
+    display: block;
+}
+
+.ankus-cod-cel-tbl thead tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+.ankus-cod-cel-tbl tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.ankus-code-wrap .th-cell {
+    display: inline-block;
+    text-align: center;
+    width: calc(100% - 80px); 
+}
+
+.ankus-cod-cel-tbl td button {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background-color: rgba( 255, 255, 255, 0 );
+    cursor: pointer;
+    width: 30px;
+    /* height: 20px;
+    background-color: transparent;
+    background-image: url('./images/menu.svg');
+    background-repeat: no-repeat;
+    background-position: center; */
+}
+
+/* syntax highlighter */
+.ankus-Cell.sel-cell.hl-wrap pre {
+    margin: 0;
+    min-height: 50px;
+}
+.ankus-Cell.hl-wrap pre {
+    margin: 0;
+    min-height: 50px;
+}
+
+/* markdown wrapper */
+.ankus-code-wrap .md-wrap {
+    background-color: var(--jp-layout-color0);
+    color: var(--jp-content-font-color0);
+    font-family: var(--jp-content-font-family);
+    padding: 5px;
+    min-height: 50px;
+}
+
+.ankus-Cell.sel-cell {
+    border: 1px solid var(--jp-cell-editor-active-border-color);
+}
+.ankus-Cell {
+    border: none;
+    background-color: var(--jp-cell-editor-background);
+    border: 1px solid var(--jp-cell-editor-border-color);
+    color: var(--jp-content-font-color0);
+    font-family: var(--jp-code-font-family);
+}
+
+textarea.ankus-Cell {
+    resize: none;
+    white-space: nowrap; 
+    min-height: 50px; 
+    width: calc(100% - 17px);
+    overflow-x: auto;
+    padding: 7px;
+}  
+
+/* .cell-text {
+    background-color: white;
+    white-space: pre;
+    min-width: calc(100% - 12px);
+    min-height: 40px;
+    padding: 5px;
+    border: 1px solid silver;
+    display: inline-block;
+} */

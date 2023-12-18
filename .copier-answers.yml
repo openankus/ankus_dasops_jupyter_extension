@@ -1,0 +1,19 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v4.2.4
+_src_path: https://github.com/jupyterlab/extension-template
+author_email: bigsleep@onycom.com
+author_name: onycom
+data_format: string
+file_extension: ''
+has_binder: true
+has_settings: false
+kind: frontend
+labextension_name: jupyter_ankus
+mimetype: ''
+mimetype_name: ''
+project_short_description: ankus JupyterLab extension.
+python_name: jupyter_ankus
+repository: ''
+test: true
+viewer_name: ''
+
