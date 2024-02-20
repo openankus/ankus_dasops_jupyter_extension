@@ -29,9 +29,7 @@ export declare class AnkusCodeEditor extends ReactWidget {
     updateTag: (tag: string, idx: number) => void;
     updateComment: (comment: string) => void;
     newCell(type: string): void;
-    pasteCell(): void;
     private updateContent;
-    deleteCell: () => Promise<void>;
     shiftEditMode: () => void;
     onAfterShow(msg: Message): void;
     protected onBeforeHide(msg: Message): void;

@@ -6,10 +6,9 @@ import Tooltip from '@material-ui/core/Tooltip';
 import { style } from 'typestyle';
 import { Widget } from '@lumino/widgets';
 
-import { Ankus } from '../ankusCommon';
+import { Ankus, ShareCode } from '../ankusCommon';
 import * as AnkusDoc from '../doc/docModel';
 import { CodeContentTab } from './codeContentTab';
-import { CodeDescTab } from './codeDescTab';
 
 import '../../style/codeedit.css';
 
@@ -157,7 +156,7 @@ export class AnkusCodeEditor extends ReactWidget {
 
   private _selectedTab = 'code';
   private _doc: AnkusDoc.AnkusDocModel;
-  private _updateStatusbar = new Signal<this, AnkusDoc.CodeObject>(this);
+  private _updateStatusbar = new Signal<this, ShareCode.CodeProperty>(this);
   private _editCell: Array<boolean> = [];
   private _selectedCell = 0;
   private _resetCode = false;
@@ -235,58 +234,12 @@ export class AnkusCodeEditor extends ReactWidget {
     }
   }
 
-  //paste cell
-  pasteCell(): void {
-    const clipbd = Ankus.ankusPlugin.clipboardData;
-    //check clipboard
-    if (clipbd !== undefined && this._selectedTab === 'code') {
-      const content = this._doc.codeContent;
-
-      clipbd.forEach((cell, i) => {
-        //insert clipboard cell into content
-        content.splice(this._selectedCell + i + 1, 0, cell);
-        //set editable
-        this._editCell.splice(this._selectedCell + i + 1, 0, false);
-      });
-
-      //update content
-      this._doc.codeContent = content;
-    }
-  } //paste cell
-
   //update content
   private updateContent = (idx: number, value: string) => {
     const content = this._doc.codeContent;
     content[idx]['source'] = value;
     this._doc.codeContent = content;
   };
-
-  //delete cell
-  deleteCell = async (): Promise<void> => {
-    if (this._selectedTab === 'code' && confirm('Delete Cell and Content?')) {
-      const content = [...this._doc.codeContent];
-      const editlist = [...this._editCell];
-
-      //하나의 셀만 있음
-      if (1 === content.length) {
-        //셀 초기화 => 편집가능한 코드 셀
-        content[0] = { source: '', cell_type: 'code' };
-        editlist[0] = true;
-      } else {
-        content.splice(this._selectedCell, 1);
-        editlist.splice(this._selectedCell, 1);
-
-        this._selectedCell =
-          this._selectedCell < content.length
-            ? this._selectedCell
-            : content.length - 1;
-      }
-
-      //update content
-      this._editCell = editlist;
-      this._doc.codeContent = content;
-    } //if : confirm
-  }; //delete cell
 
   //shift code cell edit mode
   shiftEditMode = () => {
@@ -463,15 +416,17 @@ export class AnkusCodeEditor extends ReactWidget {
             border: '1px solid var(--jp-border-color1)'
           }}
         ></hr>
-        {this._selectedTab === 'desc' ? (
-          <CodeDescTab
-            tags={this._doc.codeTag}
+        {/* <CodeDescTab
+            open={false}
+            tags={this._doc.codeTag.map(t => t.name)}
             comment={this._doc.comment}
             onAddTag={this.addTag}
             onDeleteTag={this.delTag}
             onChangeTag={this.updateTag}
             onChangeComment={this.updateComment}
-          />
+          /> */}
+        {this._selectedTab === 'desc' ? (
+          <div />
         ) : this._resetCode ? (
           <div />
         ) : (

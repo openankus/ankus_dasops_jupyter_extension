@@ -25,7 +25,7 @@ import {
 
 import { IStateDB } from '@jupyterlab/statedb';
 import { IStatusBar } from '@jupyterlab/statusbar';
-import { addIcon, notebookIcon, copyIcon } from '@jupyterlab/ui-components';
+import { addIcon, notebookIcon, editIcon } from '@jupyterlab/ui-components';
 import { Cell } from '@jupyterlab/cells';
 import { IMainMenu } from '@jupyterlab/mainmenu';
 import { IThemeManager } from '@jupyterlab/apputils';
@@ -33,15 +33,16 @@ import { ReadonlyJSONObject } from '@lumino/coreutils';
 import { Widget } from '@lumino/widgets';
 
 import { AnkusSidebar } from './component/ankusSidebar';
-import { CellData, CodeProperty } from './doc/docModel';
 import { createCommands, CommandID } from './ankusCommands';
+import { NotebookPlugin } from './notebookAction';
 import '../style/sidebar.css';
 
 import {
   Ankus,
   ANKUS_EXT_ID,
   ANKUS_ICON,
-  StandardTermPart
+  StandardTermPart,
+  ShareCode
 } from './ankusCommon';
 
 /**
@@ -51,7 +52,6 @@ const extension: JupyterFrontEndPlugin<void> = {
   id: ANKUS_EXT_ID,
   autoStart: true,
   requires: [IStateDB, IStatusBar, INotebookTracker, IMainMenu, IThemeManager],
-  //  optional: [ILayoutRestorer],
   activate
 };
 export default extension;
@@ -109,16 +109,22 @@ async function activate(
   });
 */
 
+  Ankus.initialize(app, state, statusBar, tracker);
+
   createCommands(app, mainmenu);
 
-  //add share code
+  //add code
   app.commands.addCommand(CommandID.addCode.id, {
     label: CommandID.addCode.label,
     icon: addIcon,
+    isVisible: () => Ankus.logged,
+
     isEnabled: () => {
       const panel = tracker.currentWidget;
 
       if (
+        //로그인 확인
+        !Ankus.logged ||
         panel === null ||
         panel.content.activeCell === null ||
         !(app.shell.currentWidget instanceof NotebookPanel)
@@ -149,7 +155,7 @@ async function activate(
       //cell list
       const itr = tracker.currentWidget!.content.children();
       let wg;
-      const content: Array<CellData> = [];
+      const content: Array<NotebookPlugin.CellData> = [];
 
       while ((wg = itr.next().value) !== undefined) {
         //selected  cell
@@ -176,10 +182,10 @@ async function activate(
       } //while : cell list
 
       const data: any = {};
-      data[CodeProperty.name] = title;
-      data[CodeProperty.userNo] = Ankus.userNumber;
-      data[CodeProperty.content] = content;
-      data[CodeProperty.tag] = [title];
+      data[ShareCode.CodePropertyName.name] = title;
+      data[ShareCode.CodePropertyName.userNo] = Ankus.userNumber;
+      data[ShareCode.CodePropertyName.content] = content;
+      data[ShareCode.CodePropertyName.tag] = [title];
 
       fetch(Ankus.ankusURL + '/share-code/new', {
         method: 'POST',
@@ -205,84 +211,151 @@ async function activate(
     } //execute
   }); //add Code
 
-  //copy cells
-  app.commands.addCommand(CommandID.copyCell.id, {
-    label: CommandID.copyCell.label,
-    icon: copyIcon,
+  //update code
+  app.commands.addCommand(CommandID.updateCode.id, {
+    //label
+    label: () => {
+      //selected code
+      const cd = Ankus.ankusPlugin.currentCode();
 
+      //none selected
+      if (cd === undefined) {
+        return CommandID.updateCode.label;
+      } else {
+        //코드명은 10글자까지 표시
+        const nm =
+          cd.name!.length > 20 ? cd.name!.substring(0, 20) + '...' : cd.name;
+
+        return 'Update "' + nm + '" with selected Cells';
+      }
+    }, //label
+
+    //icon
+    icon: editIcon,
+    isVisible: () => Ankus.logged,
+
+    //활성화 여부
     isEnabled: () => {
-      const panel = tracker.currentWidget;
-
+      const ntbk = Ankus.activeNotebook;
       if (
-        panel === null ||
-        panel.content.activeCell === null ||
-        !(app.shell.currentWidget instanceof NotebookPanel)
+        //로그인 확인
+        !Ankus.logged ||
+        //노트북 확인
+        ntbk === null ||
+        //노트북의 선택셀 확인
+        ntbk.activeCell === null ||
+        //코드 목록에서 선택코드 확인
+        Ankus.ankusPlugin.currentCode() === undefined ||
+        //코드 작성자와 사용자가 다름
+        Ankus.ankusPlugin.currentCode()!.writerNo !== Ankus.userID
       ) {
+        //disable
         return false;
       }
 
-      const itr = panel.content.children();
-      let wg: Widget | undefined;
+      const itr = ntbk.children();
+      let wg;
       let txt = '';
-
+      //cell list
       while ((wg = itr.next().value) !== undefined) {
-        //selected cell
-        if (wg.hasClass('jp-mod-selected')) {
-          txt += (wg as Cell).model.sharedModel.getSource(); //ver4//.value.text; //cell text
+        //selected  code, markdown
+        if (
+          wg.hasClass('jp-mod-selected') &&
+          (wg.hasClass('jp-CodeCell') || wg.hasClass('jp-MarkdownCell'))
+        ) {
+          txt += (wg as Cell).model.sharedModel.getSource().trim(); //.toJSON().source.toString(); //ver4//.value.text;
         }
-      }
+      } //while : cell list
 
       //cell is not empty
       return txt.length !== 0;
-    }, //is enabled
+    }, //isEnabled
 
     execute: async event => {
       //cell list
       const itr = tracker.currentWidget!.content.children();
-      let wg: Widget | undefined;
-      const cells = [];
+      let wg;
+      const content: Array<NotebookPlugin.CellData> = [];
 
       while ((wg = itr.next().value) !== undefined) {
-        //selected code cell
+        //selected  cell
         if (wg.hasClass('jp-mod-selected')) {
           //cell text
           const txt = (wg as Cell).model.sharedModel.getSource().trim(); //ver4//.value.text.trim();
           if (txt.length !== 0) {
             //code
             if (wg.hasClass('jp-CodeCell')) {
-              cells.push({
-                cell_type: 'code',
-                source: (wg as Cell).model.sharedModel.getSource() //ver4//.value.text
+              content.push({
+                source: (wg as Cell).model.sharedModel.getSource(), //ver4//.value.text,
+                cell_type: 'code'
               });
             }
             //markdown
             else if (wg.hasClass('jp-MarkdownCell')) {
-              cells.push({
-                cell_type: 'markdown',
-                source: (wg as Cell).model.sharedModel.getSource() //ver4//.value.text
+              content.push({
+                source: (wg as Cell).model.sharedModel.getSource(), //ver4//.value.text,
+                cell_type: 'markdown'
               });
             }
           } //if : text is not empty
         } //if : selected
       } //while : cell list
 
-      Ankus.ankusPlugin.copyCells(cells);
+      const code: any = {};
+      //code[CodePropertyName.name] = this.codeName; //code name
+      //code[CodePropertyName.comment] = this.comment; //code comment
+      code[ShareCode.CodePropertyName.content] = content; //code content
+      //code[CodePropertyName.date] = this.updateDate;
+      //code[CodePropertyName.userNo] = this.userNumber; //code writer(number)
+      //code id
+      code[ShareCode.CodePropertyName.id] = Ankus.ankusPlugin.currentCode()!.id;
+
+      //update code
+      fetch(Ankus.ankusURL + '/share-code/modify/code', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          token: Ankus.loginToken, //login token
+          code: code //code detail
+        })
+      })
+        .then(response => {
+          //response ok
+          if (response.ok) {
+            return response.json();
+          }
+          //response fail
+          else {
+            throw new Error('fail');
+          }
+        })
+        .then(jsresp => {
+          console.log('code updated');
+          //update code list
+          Ankus.ankusPlugin.updateCodelist();
+        })
+        .catch(error => {
+          alert('공유 코드 저장 오류');
+        }); //fetch
     } //execute
-  }); //copy cells
+  }); //update code
 
   //open notebook
   app.commands.addCommand(CommandID.openNtbk.id, {
     label: CommandID.openNtbk.label,
     icon: notebookIcon,
+    isEnabled: () => Ankus.ankusPlugin.currentCode() !== undefined,
 
-    execute: async args => {
+    execute: () => {
       //get code detail
       fetch(
         Ankus.ankusURL +
           '/share-code/view?token=' +
           Ankus.loginToken +
           '&codeId=' +
-          args['id']
+          Ankus.ankusPlugin.currentCode()!.id
       )
         .then(response => {
           //check response
@@ -305,10 +378,17 @@ async function activate(
                 response.revealed,
                 response.sessionContext.ready
               ]).then(() => {
+                //notebook name
+                //app.commands.execute('docmanager:rename', {});
+                tracker.currentWidget!.context.rename(
+                  codedat[ShareCode.CodePropertyName.name] + '.ipynb'
+                );
+
                 //notebook
                 const note = tracker.currentWidget!.content;
                 //code content
-                const celldat: Array<CellData> = codedat[CodeProperty.content];
+                const celldat: Array<NotebookPlugin.CellData> =
+                  codedat[ShareCode.CodePropertyName.content];
                 //cell data list
                 celldat.forEach((dat, idx) => {
                   //if (idx !== 0) {
@@ -343,9 +423,12 @@ async function activate(
 
     //enable/disable
     isEnabled: () =>
-      tracker.currentWidget !== null &&
-      tracker.currentWidget.content.activeCell !== null &&
-      app.shell.currentWidget instanceof NotebookPanel,
+      //check selected code
+      Ankus.ankusPlugin.currentCode() !== undefined &&
+      //check notebook
+      Ankus.activeNotebook !== null &&
+      //check cell
+      Ankus.activeNotebook.activeCell !== null,
 
     //execute function
     execute: async args => {
@@ -369,10 +452,14 @@ async function activate(
           //앵커스 코드 정보 표시
           const desc =
             '## ankus Share Code - ' +
-            response[CodeProperty.name] +
+            response[ShareCode.CodePropertyName.name] +
             //코드 설명이 있을 경우
-            (response[CodeProperty.comment] !== null //코드 설명에 줄바꿈이 있을 때
-              ? '\n> ' + response[CodeProperty.comment].replace('\n', '   ')
+            (response[ShareCode.CodePropertyName.comment] !== null //코드 설명에 줄바꿈이 있을 때
+              ? '\n> ' +
+                response[ShareCode.CodePropertyName.comment].replace(
+                  '\n',
+                  '   '
+                )
               : '');
 
           //notebook
@@ -386,7 +473,8 @@ async function activate(
           app.commands.execute('notebook:run-cell');
 
           //code content
-          const celldat: Array<CellData> = response[CodeProperty.content];
+          const celldat: Array<NotebookPlugin.CellData> =
+            response[ShareCode.CodePropertyName.content];
 
           //cell data list
           celldat.forEach((dat, idx) => {
@@ -436,8 +524,6 @@ async function activate(
   // theme.themeChanged.connect((sender: IThemeManager, args: any) => {
   //   Ankus.themeIsLight = sender.isLight(args.newValue);
   // });
-
-  Ankus.initialize(app, state, statusBar, tracker);
 
   // Load the saved plugin state and apply it once the app
   // has finished restoring its former layout.

@@ -139,7 +139,7 @@
 }
 
 .ankus-term-setting-input {
-    border: 1px solid var(--jp-border-color2);
+    border: 1px solid var(--jp-input-border-color);
     width: 100%;
     margin: 0;
     padding: 0;

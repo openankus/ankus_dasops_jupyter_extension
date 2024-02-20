@@ -9,7 +9,7 @@ import {
 import Grid from '@material-ui/core/Grid';
 
 import { Ankus, StandardTermPart } from '../ankusCommon';
-import { NotebookAction } from '../notebookAction';
+import { NotebookPlugin } from '../notebookAction';
 import '../../style/standardterm.css';
 
 /**
@@ -220,7 +220,7 @@ export class StandardTerm extends React.Component<any, IListState> {
 
   private selectWord = (word: StandardTermPart.Word): void => {
     //insert into notebook
-    NotebookAction.insertCompletionText(word.engName!, false);
+    NotebookPlugin.insertCompletionText(word.engName!, false);
   };
 
   private loadCategories = async () => {
@@ -252,15 +252,17 @@ export class StandardTerm extends React.Component<any, IListState> {
     //show loading
     this.setState({ loading: true });
 
-    try {
-      //search term
-      this._termList = await StandardTermPart.searchWords(
-        this.state.searchOption,
-        this.state.keyword,
-        orderCol,
-        asc,
-        this.state.category
-      );
+    //search term
+    const lst = await StandardTermPart.searchWords(
+      this.state.searchOption,
+      this.state.keyword,
+      orderCol,
+      asc,
+      this.state.category
+    );
+
+    if (lst !== null) {
+      this._termList = lst;
 
       this.setState({
         searchResult:
@@ -269,8 +271,6 @@ export class StandardTerm extends React.Component<any, IListState> {
           this.state.categories.find(c => c.id === this.state.category)?.name +
           '"'
       });
-    } catch (e) {
-      this._termList = undefined;
     }
 
     //hide loading

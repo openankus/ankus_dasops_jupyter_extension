@@ -1,8 +1,8 @@
 import React from 'react';
 import '../../style/codecontent.css';
-import { CellData } from '../doc/docModel';
+import { NotebookPlugin } from '../notebookAction';
 export interface ICodeCell {
-    data: Array<CellData>;
+    data: Array<NotebookPlugin.CellData>;
     edit: Array<boolean>;
     selectedCell: number;
     onChangeCell: (rowIdx: number, value: string) => void;

@@ -2,8 +2,7 @@ import { IStatusBar } from '@jupyterlab/statusbar';
 import { ISignal } from '@lumino/signaling';
 import { Widget } from '@lumino/widgets';
 
-import { Ankus } from '../ankusCommon';
-import { CodeObject } from '../doc/docModel';
+import { Ankus, ShareCode } from '../ankusCommon';
 import { AnkusCodeEditor } from './ankusCodeEditor';
 
 export class AnkusStatusbar implements IStatusBar.IItem {
@@ -21,15 +20,18 @@ export class AnkusStatusbar implements IStatusBar.IItem {
     this._isActive = value;
   }
 
-  setEditor(editor: ISignal<AnkusCodeEditor, CodeObject>): void {
+  setEditor(editor: ISignal<AnkusCodeEditor, ShareCode.CodeProperty>): void {
     editor.connect(this._onUpdate);
   }
 
-  delEditor(editor: ISignal<AnkusCodeEditor, CodeObject>): void {
+  delEditor(editor: ISignal<AnkusCodeEditor, ShareCode.CodeProperty>): void {
     editor.disconnect(this._onUpdate);
   }
 
-  private _onUpdate = (sender: AnkusCodeEditor, change: CodeObject): void => {
+  private _onUpdate = (
+    sender: AnkusCodeEditor,
+    change: ShareCode.CodeProperty
+  ): void => {
     this.item.node.innerHTML = `작성자: ${
       change.writer
     }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;최종 작성일: ${Ankus.dateToString(

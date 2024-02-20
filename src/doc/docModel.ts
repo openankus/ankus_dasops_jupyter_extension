@@ -6,35 +6,8 @@ import { PartialJSONValue, ReadonlyPartialJSONValue } from '@lumino/coreutils';
 import { ISignal, Signal } from '@lumino/signaling';
 import * as Y from 'yjs';
 
-import { Ankus } from '../ankusCommon';
-
-//api 서버와 함께 사용하는 명칭
-export enum CodeProperty {
-  id = 'codeId',
-  name = 'title',
-  comment = 'codeComment',
-  userNo = 'writer',
-  date = 'udate',
-  content = 'content',
-  userName = 'name',
-  tag = 'tags'
-}
-
-export type CodeObject = {
-  id?: number;
-  name?: string;
-  writer?: string; //작성자명
-  date?: Date;
-  comment?: string;
-  tag?: Array<any>;
-  content?: Array<any>;
-  writerNo?: number; //작성자 고유번호
-};
-
-export type CellData = {
-  cell_type: string; //code, markdown
-  source: string;
-};
+import { Ankus, ShareCode } from '../ankusCommon';
+import { NotebookPlugin } from '../notebookAction';
 
 enum TagState {
   Normal,
@@ -154,11 +127,11 @@ export class AnkusDocModel implements DocumentRegistry.IModel {
     Signal.clearData(this);
   }
 
-  /*  getCodeObject(): CodeObject {
+  /*  getCodeObject(): CodeProperty {
     return {
-      comment: this.sharedModel.getContent(CodeProperty.comment),
-      tag: this.sharedModel.getContent(CodeProperty.tag),
-      content: this.sharedModel.getContent(CodeProperty.content),
+      comment: this.sharedModel.getContent(CodePropertyName.comment),
+      tag: this.sharedModel.getContent(CodePropertyName.tag),
+      content: this.sharedModel.getContent(CodePropertyName.content),
       id: this.sharedModel.codeId,
       name: this.sharedModel.codeName,
       writer: this.sharedModel.writer,
@@ -167,7 +140,7 @@ export class AnkusDocModel implements DocumentRegistry.IModel {
   } */
 
   setComment(comment: string): void {
-    this.sharedModel.setContent(CodeProperty.comment, comment);
+    this.sharedModel.setContent(ShareCode.CodePropertyName.comment, comment);
   }
 
   addTag(name: string): void {
@@ -182,7 +155,7 @@ export class AnkusDocModel implements DocumentRegistry.IModel {
     //if (found === undefined) {
     tags.push(CodeTag.newTag(name));
 
-    this.sharedModel.setContent(CodeProperty.tag, tags);
+    this.sharedModel.setContent(ShareCode.CodePropertyName.tag, tags);
   }
 
   deleteTag(name: string): void {
@@ -191,34 +164,34 @@ export class AnkusDocModel implements DocumentRegistry.IModel {
     if (found !== undefined) {
       tags.splice(tags.indexOf(found), 1);
 
-      this.sharedModel.setContent(CodeProperty.tag, tags);
+      this.sharedModel.setContent(ShareCode.CodePropertyName.tag, tags);
     }
   }
 
   updateTag(name: string, idx: number) {
     const tags = this.codeTag;
     tags[idx].name = name;
-    this.sharedModel.setContent(CodeProperty.tag, tags);
+    this.sharedModel.setContent(ShareCode.CodePropertyName.tag, tags);
   }
 
   get comment(): string {
-    return this.sharedModel.getContent(CodeProperty.comment);
+    return this.sharedModel.getContent(ShareCode.CodePropertyName.comment);
   }
 
-  get codeContent(): Array<CellData> {
-    return this.sharedModel.getContent(CodeProperty.content);
+  get codeContent(): Array<NotebookPlugin.CellData> {
+    return this.sharedModel.getContent(ShareCode.CodePropertyName.content);
   }
 
-  set codeContent(content: Array<CellData>) {
-    this.sharedModel.setContent(CodeProperty.content, content);
+  set codeContent(content: Array<NotebookPlugin.CellData>) {
+    this.sharedModel.setContent(ShareCode.CodePropertyName.content, content);
   }
 
   get codeTag(): Array<CodeTag> {
-    return this.sharedModel.getContent(CodeProperty.tag);
+    return this.sharedModel.getContent(ShareCode.CodePropertyName.tag);
   }
 
   set codeTag(list: Array<CodeTag>) {
-    this.sharedModel.setContent(CodeProperty.tag, list);
+    this.sharedModel.setContent(ShareCode.CodePropertyName.tag, list);
   }
 
   get sharedModelChanged(): ISignal<this, AnkusDocChange> {
@@ -237,35 +210,35 @@ export class AnkusDocModel implements DocumentRegistry.IModel {
   };
 
   get codeId(): number | undefined {
-    return this.sharedModel.getContent(CodeProperty.id);
+    return this.sharedModel.getContent(ShareCode.CodePropertyName.id);
   }
 
   set codeId(value: number | undefined) {
-    this.sharedModel.setContent(CodeProperty.id, value);
+    this.sharedModel.setContent(ShareCode.CodePropertyName.id, value);
   }
 
   get codeName(): string {
-    return this.sharedModel.getContent(CodeProperty.name);
+    return this.sharedModel.getContent(ShareCode.CodePropertyName.name);
   }
 
   set codeName(value: string) {
-    this.sharedModel.setContent(CodeProperty.name, value);
+    this.sharedModel.setContent(ShareCode.CodePropertyName.name, value);
   }
 
   get writer(): string {
-    return this.sharedModel.getContent(CodeProperty.userName);
+    return this.sharedModel.getContent(ShareCode.CodePropertyName.userName);
   }
 
   set writer(value: string) {
-    this.sharedModel.setContent(CodeProperty.userName, value);
+    this.sharedModel.setContent(ShareCode.CodePropertyName.userName, value);
   }
 
   get userNumber(): number {
-    return this.sharedModel.getContent(CodeProperty.userNo);
+    return this.sharedModel.getContent(ShareCode.CodePropertyName.userNo);
   }
 
   set userNumber(value: number) {
-    this.sharedModel.setContent(CodeProperty.userNo, value);
+    this.sharedModel.setContent(ShareCode.CodePropertyName.userNo, value);
   }
 
   get updateDate(): Date {
@@ -313,7 +286,7 @@ export class AnkusDocModel implements DocumentRegistry.IModel {
             }
           });
 
-          this.sharedModel.setContent(CodeProperty.tag, tags);
+          this.sharedModel.setContent(CodePropertyName.tag, tags);
           this.updateCode();
         })
         .catch(error => {
@@ -330,15 +303,17 @@ export class AnkusDocModel implements DocumentRegistry.IModel {
     });
 
     const code: any = {};
-    code[CodeProperty.name] = this.codeName; //code name
-    code[CodeProperty.comment] = this.comment; //code comment
-    code[CodeProperty.content] = contents; //code content
-    //code[CodeProperty.date] = this.updateDate;
-    code[CodeProperty.userNo] = this.userNumber; //code writer(number)
+    code[ShareCode.CodePropertyName.name] = this.codeName; //code name
+    code[ShareCode.CodePropertyName.comment] = this.comment; //code comment
+    code[ShareCode.CodePropertyName.content] = contents; //code content
+    //code[CodePropertyName.date] = this.updateDate;
+    code[ShareCode.CodePropertyName.userNo] = this.userNumber; //code writer(number)
     //tag list
-    code[CodeProperty.tag] = this.codeTag.map((tag, index) => tag.name);
+    code[ShareCode.CodePropertyName.tag] = this.codeTag.map(
+      (tag, index) => tag.name
+    );
     //code id
-    code[CodeProperty.id] = this.codeId;
+    code[ShareCode.CodePropertyName.id] = this.codeId;
 
     //update code
     fetch(Ankus.ankusURL + '/share-code/modify', {
@@ -364,7 +339,7 @@ export class AnkusDocModel implements DocumentRegistry.IModel {
       .then(jsresp => {
         console.log('code updated');
         //update date
-        this.updateDate = jsresp[CodeProperty.date];
+        this.updateDate = jsresp[ShareCode.CodePropertyName.date];
         //reset dirty
         this.dirty = false;
         //saved signal
@@ -384,13 +359,15 @@ export class AnkusDocModel implements DocumentRegistry.IModel {
       });
 
       const code: any = {};
-      code[CodeProperty.name] = this.codeName; //code name
-      code[CodeProperty.comment] = this.comment; //code comment
-      code[CodeProperty.content] = contents; //code content
-      //code[CodeProperty.date] = this.updateDate;
-      code[CodeProperty.userNo] = this.userNumber; //code writer(number)
+      code[ShareCode.CodePropertyName.name] = this.codeName; //code name
+      code[ShareCode.CodePropertyName.comment] = this.comment; //code comment
+      code[ShareCode.CodePropertyName.content] = contents; //code content
+      //code[CodePropertyName.date] = this.updateDate;
+      code[ShareCode.CodePropertyName.userNo] = this.userNumber; //code writer(number)
       //tag list
-      code[CodeProperty.tag] = this.codeTag.map((tag, index) => tag.name);
+      code[ShareCode.CodePropertyName.tag] = this.codeTag.map(
+        (tag, index) => tag.name
+      );
 
       fetch(Ankus.ankusURL + '/share-code/new', {
         method: 'POST',
@@ -414,9 +391,9 @@ export class AnkusDocModel implements DocumentRegistry.IModel {
         })
         .then(jsresp => {
           //code id
-          this.codeId = jsresp[CodeProperty.id];
+          this.codeId = jsresp[ShareCode.CodePropertyName.id];
           //update date
-          this.updateDate = jsresp[CodeProperty.date];
+          this.updateDate = jsresp[ShareCode.CodePropertyName.date];
           //reset dirty
           this.dirty = false;
           //saved signal
@@ -554,14 +531,18 @@ export class AnkusDoc extends YDocument<AnkusDocChange> {
     const changes: AnkusDocChange = {};
 
     // Checks which object changed and propagates them.
-    if (event.keysChanged.has(CodeProperty.tag)) {
-      changes.tagChange = this._content.get(CodeProperty.tag);
-    } else if (event.keysChanged.has(CodeProperty.comment)) {
-      changes.commentChange = this._content.get(CodeProperty.comment);
-    } else if (event.keysChanged.has(CodeProperty.content)) {
-      changes.codeChange = this._content.get(CodeProperty.content);
-    } else if (event.keysChanged.has(CodeProperty.name)) {
-      changes.nameChange = this._content.get(CodeProperty.name);
+    if (event.keysChanged.has(ShareCode.CodePropertyName.tag)) {
+      changes.tagChange = this._content.get(ShareCode.CodePropertyName.tag);
+    } else if (event.keysChanged.has(ShareCode.CodePropertyName.comment)) {
+      changes.commentChange = this._content.get(
+        ShareCode.CodePropertyName.comment
+      );
+    } else if (event.keysChanged.has(ShareCode.CodePropertyName.content)) {
+      changes.codeChange = this._content.get(
+        ShareCode.CodePropertyName.content
+      );
+    } else if (event.keysChanged.has(ShareCode.CodePropertyName.name)) {
+      changes.nameChange = this._content.get(ShareCode.CodePropertyName.name);
     } else {
       return;
     }

@@ -100,6 +100,9 @@ body {font-family: 'Noto Sans', sans-serif;}
     padding: 0;
     margin: 0;
 }
+.ankus-sidebar-icon .cls-1 {
+    fill: var(--jp-inverse-layout-color3);
+}
 
 .ankus-term-title-btn {
     background-color: transparent;

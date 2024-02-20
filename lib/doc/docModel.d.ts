@@ -4,30 +4,7 @@ import { IModelDB } from '@jupyterlab/observables';
 import { YDocument, MapChange, StateChange } from '@jupyter/ydoc';
 import { PartialJSONValue, ReadonlyPartialJSONValue } from '@lumino/coreutils';
 import { ISignal } from '@lumino/signaling';
-export declare enum CodeProperty {
-    id = "codeId",
-    name = "title",
-    comment = "codeComment",
-    userNo = "writer",
-    date = "udate",
-    content = "content",
-    userName = "name",
-    tag = "tags"
-}
-export type CodeObject = {
-    id?: number;
-    name?: string;
-    writer?: string;
-    date?: Date;
-    comment?: string;
-    tag?: Array<any>;
-    content?: Array<any>;
-    writerNo?: number;
-};
-export type CellData = {
-    cell_type: string;
-    source: string;
-};
+import { NotebookPlugin } from '../notebookAction';
 export declare class CodeTag {
     private _state;
     name: string;
@@ -75,8 +52,8 @@ export declare class AnkusDocModel implements DocumentRegistry.IModel {
     deleteTag(name: string): void;
     updateTag(name: string, idx: number): void;
     get comment(): string;
-    get codeContent(): Array<CellData>;
-    set codeContent(content: Array<CellData>);
+    get codeContent(): Array<NotebookPlugin.CellData>;
+    set codeContent(content: Array<NotebookPlugin.CellData>);
     get codeTag(): Array<CodeTag>;
     set codeTag(list: Array<CodeTag>);
     get sharedModelChanged(): ISignal<this, AnkusDocChange>;

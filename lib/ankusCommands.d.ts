@@ -1,28 +1,6 @@
 import { JupyterFrontEnd } from '@jupyterlab/application';
-import { Menu } from '@lumino/widgets';
 import { IMainMenu } from '@jupyterlab/mainmenu';
-import { CodeObject } from './doc/docModel';
 export declare const CommandID: {
-    newCodeCell: {
-        id: string;
-        label: string;
-    };
-    newMarkdown: {
-        id: string;
-        label: string;
-    };
-    deleteCell: {
-        id: string;
-        label: string;
-    };
-    pasteCell: {
-        id: string;
-        label: string;
-    };
-    editCell: {
-        id: string;
-        label: string;
-    };
     renderCell: {
         id: string;
         label: string;
@@ -31,7 +9,7 @@ export declare const CommandID: {
         id: string;
         label: string;
     };
-    copyCell: {
+    updateCode: {
         id: string;
         label: string;
     };
@@ -39,11 +17,23 @@ export declare const CommandID: {
         id: string;
         label: string;
     };
+    selectCodeItem: {
+        id: string;
+        label: string;
+    };
     openNtbk: {
         id: string;
         label: string;
     };
-    openCode: {
+    renameCode: {
+        id: string;
+        label: string;
+    };
+    codeProp: {
+        id: string;
+        label: string;
+    };
+    duplicCode: {
         id: string;
         label: string;
     };
@@ -55,10 +45,13 @@ export declare const CommandID: {
         id: string;
         label: string;
     };
-    saveCode: {
+    simpleList: {
+        id: string;
+        label: string;
+    };
+    detailList: {
         id: string;
         label: string;
     };
 };
 export declare function createCommands(app: JupyterFrontEnd, mainmenu: IMainMenu): void;
-export declare const codeContextMenu: (code: CodeObject) => Menu;

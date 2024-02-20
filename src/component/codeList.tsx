@@ -1,19 +1,70 @@
 import React from 'react';
 import ReactLoading from 'react-loading';
 import { style } from 'typestyle';
-import { AiOutlineLogout } from 'react-icons/ai';
+import styled from 'styled-components';
 
-import { Ankus } from '../ankusCommon';
-import { codeContextMenu } from '../ankusCommands';
-import { CodeObject, CodeProperty } from '../doc/docModel';
+import {
+  AiOutlineLogout,
+  AiOutlineAlignLeft,
+  AiOutlineBars
+} from 'react-icons/ai';
+
+import { Ankus, ShareCode } from '../ankusCommon';
 import '../../style/codelist.css';
+import { CodePropDlg, RenameDialog } from './codeDescTab';
+import { NotebookPlugin } from '../notebookAction';
 
-let selectedCode: number | undefined = undefined;
+enum CodeView {
+  simple,
+  detail
+}
 
 interface ICodeProps {
-  codeobj: CodeObject;
-  onClick?: (event: any, codeobj: CodeObject) => void;
+  codeobj: ShareCode.CodeProperty;
+  select: boolean;
+  viewType: CodeView;
+  onClick?: (event: any, codeobj: ShareCode.CodeProperty) => void;
 }
+
+const SimpleCodeItem = styled.div`
+  font-family: var(--jp-content-font-family);
+  font-size: 12px;
+  height: 24px;
+  padding: 0 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--jp-ui-font-color1);
+  &:hover {
+    background-color: var(--jp-layout-color2);
+  }
+`;
+const SelSimpleCodeItem = styled.div`
+  font-family: var(--jp-content-font-family);
+  font-size: 12px;
+  height: 24px;
+  padding: 0 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--jp-brand-color1);
+  color: var(--jp-ui-inverse-font-color1);
+`;
+const SimpleCodeName = styled.span`
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  width: calc(100% - 150px);
+`;
+const SimpleCodeDate = styled.span`
+  width: 135px;
+  text-align: right;
+`;
+
+const DetailCodeName = styled.p`
+  font-size: 16px;
+  font-weight: 600;
+`;
 
 const CodeElement: React.FunctionComponent<ICodeProps> = (
   props: ICodeProps
@@ -24,32 +75,38 @@ const CodeElement: React.FunctionComponent<ICodeProps> = (
     }
   };
 
-  const showMenu = (event: any): void => {
+  /* const showMenu = (event: any): void => {
     //select code
     onClick(event);
 
     //context menu
     const menu = codeContextMenu(props.codeobj);
     menu.open(event.clientX, event.clientY);
-  };
+  }; */
 
+  //double click code
   const dblclickCode = () => {
-    Ankus.ankusPlugin.openCodeEditor(props.codeobj.id);
+    Ankus.cmdReg.execute('ankus:ntbk-open-code');
   };
 
-  return (
-    <div>
-      <div
-        className={
-          selectedCode === props.codeobj.id ? 'code-item sel-code' : 'code-item'
-        }
-        onClick={onClick}
-        onDoubleClick={dblclickCode}
-      >
-        <div className="menu-flex">
-          <p>{props.codeobj.name}</p>
-          <button className="code-menu" onClick={showMenu}></button>
-        </div>
+  const tooltip = () => {
+    return (
+      '• Writer: ' +
+      props.codeobj.writer +
+      '\n• Description:\n' +
+      (props.codeobj.comment ? props.codeobj.comment : '')
+    );
+  };
+
+  return props.viewType === CodeView.detail ? (
+    <li
+      className="ankus-code-list-item"
+      onClick={onClick}
+      onDoubleClick={dblclickCode}
+      onContextMenu={onClick}
+    >
+      <div className={props.select ? 'code-item sel-code' : 'code-item'}>
+        <DetailCodeName>{props.codeobj.name}</DetailCodeName>
         <p>{props.codeobj.comment}</p>
         <p>{props.codeobj.tag}</p>
         <p>
@@ -57,22 +114,36 @@ const CodeElement: React.FunctionComponent<ICodeProps> = (
           {Ankus.dateToString(props.codeobj.date!)}
         </p>
       </div>
-    </div>
+    </li>
+  ) : (
+    <li
+      className="ankus-code-list-item"
+      onClick={onClick}
+      onDoubleClick={dblclickCode}
+      onContextMenu={onClick}
+      title={tooltip()}
+    >
+      {props.select ? (
+        <SelSimpleCodeItem>
+          <SimpleCodeName>{props.codeobj.name}</SimpleCodeName>
+          <SimpleCodeDate>
+            {Ankus.dateToString(props.codeobj.date!)}
+          </SimpleCodeDate>
+        </SelSimpleCodeItem>
+      ) : (
+        <SimpleCodeItem>
+          <SimpleCodeName>{props.codeobj.name}</SimpleCodeName>
+          <SimpleCodeDate>
+            {Ankus.dateToString(props.codeobj.date!)}
+          </SimpleCodeDate>
+        </SimpleCodeItem>
+      )}
+    </li>
   );
 }; //CodeElement
 
 interface ICodelistProp {
   logout: () => void;
-}
-
-interface IListState {
-  searchOption: string;
-  order: string; //asc, desc
-  page: number;
-  errMsg: string;
-  orderOption: string;
-  selCode?: CodeObject; //selected code
-  loading: boolean;
 }
 
 type SearchOption = {
@@ -81,68 +152,244 @@ type SearchOption = {
   guide: string;
 };
 
-export class CodelistWidget extends React.Component<ICodelistProp, IListState> {
+export class CodelistWidget extends React.Component<ICodelistProp, any> {
   SEARCH_OPTION: Array<SearchOption> = [
-    { name: CodeProperty.name, label: 'Name', guide: 'Search Name' },
     {
-      name: CodeProperty.tag,
+      name: ShareCode.CodePropertyName.name,
+      label: 'Name',
+      guide: 'Search Name'
+    },
+    {
+      name: ShareCode.CodePropertyName.tag,
       label: 'Tag',
       guide: 'Search Tag(ex: tag1 tag2)'
     },
     {
-      name: CodeProperty.comment,
+      name: ShareCode.CodePropertyName.comment,
       label: 'Comments',
       guide: 'Search Comments(ex: word1 word2)'
     },
-    { name: CodeProperty.userNo, label: 'Writer', guide: 'Search Writer' }
+    {
+      name: ShareCode.CodePropertyName.userNo,
+      label: 'Writer',
+      guide: 'Search Writer'
+    }
   ];
 
-  //export const CodelistWidget: React.FunctionComponent = () => {
   constructor(props: any) {
     super(props);
 
     Ankus.ankusPlugin.codeList = this;
 
     this.state = {
-      searchOption: CodeProperty.name,
-      order: 'asc',
-      page: 0,
-      errMsg: '',
-      orderOption: CodeProperty.name,
-      loading: false
+      searchOption: ShareCode.CodePropertyName.name,
+      searchResult: '',
+      orderDirection: 'asc',
+      orderOption: ShareCode.CodePropertyName.name,
+      codeSize: 0,
+      loading: false,
+      selection: undefined,
+      viewType: CodeView.simple,
+      pageNo: 0,
+      pageSize: 0,
+      openProp: false,
+      openRename: false
     };
 
-    this.searchCode(0, CodeProperty.name, true);
+    this.searchCode(
+      this.state.viewType === CodeView.detail ? 0 : -1,
+      ShareCode.CodePropertyName.name,
+      true
+    );
   } //constructor
 
-  private _codeList: Array<any> = [];
-  private _codeSize = 0;
-  private _pageSize = 0;
+  private _errMsg = '';
+  private _codeList: Array<ShareCode.CodeProperty> = [];
   private _searchKeyword = '';
-  private _searchResultDesc = '';
 
-  private resultStyle = style({
-    fontSize: '12px',
-    color: 'var(--jp-ui-font-color2)',
-    margin: '15px 0 0 5px'
-  });
+  SearchResult = styled.span`
+    font-size: 12px;
+    color: var(--jp-ui-font-color2);
+    margin: 15px 0 0 5px;
+  `;
 
-  private selectCode = (event: any, codeobj: CodeObject): void => {
-    // const selcode = document.getElementsByClassName(SEL_CLS_NAME);
-    // if (selcode.length > 0) {
-    //   selcode.item(0)!.classList.remove(SEL_CLS_NAME);
-    // }
-    // event.target.classList.add(SEL_CLS_NAME);
+  ViewButton = styled.button`
+    color: var(--jp-ui-font-color2);
+    display: inline-block;
+    width: 17px;
+    height: 17px;
+    padding: 2px;
+  `;
 
-    selectedCode = codeobj.id;
+  CodeList = styled.ul`
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+    font-family: var(--jp-content-font-family);
+    list-style: none;
+    background-color: var(--jp-layout-color0);
+  `;
+
+  get selectedCode(): ShareCode.CodeProperty | undefined {
+    return this.state.selection?.prop;
+  }
+
+  //open code property
+  async openCodeProp() {
+    try {
+      //get code
+      const response = await fetch(
+        `${Ankus.ankusURL}/share-code/view?token=` +
+          Ankus.loginToken +
+          '&codeId=' +
+          this.state.selection!.prop.id
+      );
+
+      //fail
+      if (!response.ok) {
+        throw new Error('fail');
+      }
+
+      const jsrp = await response.json();
+      const codetail: ShareCode.CodeProperty = {
+        ...this.state.selection!.prop
+      };
+
+      // codetail.id = this.state.selection?.id;
+      // codetail.name = jsrp[ShareCode.CodePropertyName.name];
+      // codetail.writer = jsrp[ShareCode.CodePropertyName.userName];
+      // codetail.date = jsrp[ShareCode.CodePropertyName.date];
+      // codetail.writerNo = jsrp[ShareCode.CodePropertyName.userNo];
+
+      const content: NotebookPlugin.CellData[] =
+        jsrp[ShareCode.CodePropertyName.content];
+
+      //comment
+      if (jsrp[ShareCode.CodePropertyName.comment] !== null) {
+        codetail.comment = jsrp[ShareCode.CodePropertyName.comment];
+      }
+
+      //tag list
+      if (jsrp[ShareCode.CodePropertyName.tag] !== null) {
+        codetail.taglist = jsrp[ShareCode.CodePropertyName.tag].map(
+          (value: any) => value.name
+        );
+      }
+
+      this.setState({ selection: { prop: codetail, content: content } });
+      this.setState({ openProp: true });
+    } catch (error) {
+      alert('공유 코드 정보 가져오기 오류');
+    }
+  } //openCodeProp
+
+  //open rename dialog
+  openRenameDlg() {
+    this.setState({ openRename: true });
+  }
+
+  //on select code
+  private clbkSelectCode = (
+    event: any,
+    codeobj: ShareCode.CodeProperty
+  ): void => {
     //update selection
-    this.setState({ selCode: codeobj });
+    this.setState({ selection: { prop: codeobj } });
   };
+
+  //callback - close property dialog
+  private clbkCloseProp = (
+    save: boolean,
+    taglist?: Array<string>,
+    desc?: string
+  ) => {
+    //close
+    this.setState({ openProp: false });
+
+    if (save) {
+      const code: any = {};
+      code[ShareCode.CodePropertyName.comment] = desc;
+      //tag list
+      code[ShareCode.CodePropertyName.tag] = taglist;
+      //code id
+      code[ShareCode.CodePropertyName.id] = this.state.selection!.prop.id;
+
+      //update code
+      fetch(Ankus.ankusURL + '/share-code/modify/prop', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          token: Ankus.loginToken, //login token
+          code: code //code detail
+        })
+      })
+        .then(response => {
+          //response ok
+          if (response.ok) {
+            this.refresh();
+            this.setState({ selection: undefined });
+          }
+          //response fail
+          else {
+            throw new Error('fail');
+          }
+        })
+        .catch(error => {
+          alert('공유 코드 저장 오류');
+        }); //fetch
+    } //if : check tag list
+  }; //clbkCloseProp
+
+  //callback - close rename dialog
+  private clbkCloseRename = async (name: string | undefined) => {
+    //close dialog
+    this.setState({ openRename: false });
+
+    if (
+      name !== undefined &&
+      name.length > 0 &&
+      name !== this.state.selection!.prop.name
+    ) {
+      const code: any = {};
+      //code name
+      code[ShareCode.CodePropertyName.name] = name;
+      //code id
+      code[ShareCode.CodePropertyName.id] = this.state.selection!.prop.id;
+
+      //update code
+      fetch(Ankus.ankusURL + '/share-code/modify/name', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          token: Ankus.loginToken, //login token
+          code: code //code detail
+        })
+      })
+        .then(response => {
+          //response ok
+          if (response.ok) {
+            //update code list
+            this.refresh();
+          }
+          //response fail
+          else {
+            throw new Error('fail');
+          }
+        })
+        .catch(error => {
+          alert('공유 코드 저장 오류');
+        }); //fetch
+    } //if : check name
+  }; //clbkCloseRename
 
   getSearchKeywords(): Array<string> {
     if (
-      this.state.searchOption === CodeProperty.tag ||
-      this.state.searchOption === CodeProperty.comment
+      this.state.searchOption === ShareCode.CodePropertyName.tag ||
+      this.state.searchOption === ShareCode.CodePropertyName.comment
     ) {
       return this._searchKeyword.trim().split(' ');
     } else {
@@ -152,29 +399,30 @@ export class CodelistWidget extends React.Component<ICodelistProp, IListState> {
 
   private prevPage = () => {
     this.searchCode(
-      this.state.page - 1,
+      this.state.pageNo - 1,
       this.state.orderOption,
-      this.state.order === 'asc'
+      this.state.orderDirection === 'asc'
     );
   };
 
   private nextPage = () => {
     this.searchCode(
-      this.state.page + 1,
+      this.state.pageNo + 1,
       this.state.orderOption,
-      this.state.order === 'asc'
+      this.state.orderDirection === 'asc'
     );
   };
 
+  //refresh list
   refresh() {
     this.searchCode(
-      this.state.page,
+      this.state.pageNo,
       this.state.orderOption,
-      this.state.order === 'asc'
+      this.state.orderDirection === 'asc'
     );
   }
 
-  resultMessage(keyword: string): string {
+  resultMessage(keyword: string, count: number): string {
     if (keyword) {
       return (
         'Search for "' +
@@ -184,74 +432,62 @@ export class CodelistWidget extends React.Component<ICodelistProp, IListState> {
           option => option.name === this.state.searchOption
         )?.label +
         ' - Total ' +
-        this._codeSize
+        count
       );
     } else {
-      return 'Total ' + this._codeSize;
+      return 'Total ' + count;
     }
   } //resultMessage
 
-  private searchCode = (page: number, orderCol: string, asc: boolean) => {
+  //code list
+  private searchCode = async (page: number, orderCol: string, asc: boolean) => {
+    //search keyword list
     const words = this.getSearchKeywords();
-    //list option
-    const option = {
-      token: Ankus.loginToken,
-      searchColumn: this.state.searchOption,
-      searchKeyword: words,
-      orderColumn: orderCol,
-      order: asc ? 'asc' : 'desc',
-      page: page
-    };
+    //search option
+    const searchOption = this.state.searchOption;
 
+    //show wait image
     this.setState({ loading: true });
 
-    fetch(Ankus.ankusURL + '/share-code/codelist', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(option)
-    })
-      .then(response => {
-        if (response.ok) {
-          return response.json();
-        } else {
-          throw new Error('fail');
-        }
-      })
-      .then(response => {
-        this.setState({ loading: false });
+    const out = await ShareCode.codelist(
+      words,
+      searchOption,
+      orderCol,
+      asc,
+      page
+    );
 
-        selectedCode = undefined;
+    this.setState({
+      //hide wait image
+      loading: false,
+      //init code selection
+      selection: undefined,
+      //code list order
+      orderDirection: asc ? 'asc' : 'desc',
+      orderOption: orderCol
+    });
 
-        this._codeList = response.content;
-        this._codeSize = response.totalElements;
-        this._pageSize = response.pageable.pageSize;
-        this._searchResultDesc = this.resultMessage(words.join(', '));
+    if (out !== null) {
+      this._codeList = out.list;
 
-        this.setState({
-          page: page,
-          errMsg: '',
-          orderOption: orderCol,
-          order: asc ? 'asc' : 'desc'
-        });
-      })
-      .catch(error => {
-        //this.setState({ errMsg: '공유 코드 목록 조회 오류' });
-        this.setState({ loading: false });
+      this.setState({
+        codeSize: out.totalSize,
+        searchOption: searchOption,
+        searchResult: this.resultMessage(words.join(', '), out.totalSize),
+        pageSize: out.pageSize,
+        pageNo: page
+      });
+    } else {
+      this._codeList = [];
 
-        this._codeList = [];
-        this._codeSize = 0;
-        this._pageSize = 0;
-        this._searchResultDesc = this.resultMessage(words.join(', '));
-
-        this.setState({
-          page: 0,
-          errMsg: '',
-          orderOption: orderCol,
-          order: asc ? 'asc' : 'desc'
-        });
-      }); //fetch
+      this.setState({
+        codeSize: 0,
+        searchOption: searchOption,
+        searchResult: this.resultMessage(words.join(', '), 0),
+        pageSize: 0,
+        pageNo: 0
+      });
+    }
   }; //searchCode
 
   /*   private deleteCode = () => {
@@ -281,7 +517,8 @@ export class CodelistWidget extends React.Component<ICodelistProp, IListState> {
   changeSearchOption = (e: any) => {
     this.SEARCH_OPTION.forEach(element => {
       if (element.name === e.target.value) {
-        this.setState({ searchOption: element.name });
+        const res = this.state.searchResult;
+        this.setState({ searchOption: element.name, searchResult: res });
         return false;
       }
     });
@@ -289,6 +526,7 @@ export class CodelistWidget extends React.Component<ICodelistProp, IListState> {
 
   changeSearchKeyword = (e: any) => {
     //this.setState({ searchKeyword: e.target.value });
+    console.log(e.target.value);
     this._searchKeyword = e.target.value;
   };
 
@@ -297,36 +535,63 @@ export class CodelistWidget extends React.Component<ICodelistProp, IListState> {
     //제목 정렬 선택
     if (e.target.className === 'name-wrap') {
       //현재 제목 정렬 상태
-      if (this.state.orderOption === CodeProperty.name) {
+      if (this.state.orderOption === ShareCode.CodePropertyName.name) {
         //정렬 순서 변경
-        this.searchCode(0, this.state.orderOption, this.state.order !== 'asc');
+        this.searchCode(
+          this.state.viewType === CodeView.detail ? 0 : -1,
+          this.state.orderOption,
+          this.state.orderDirection !== 'asc'
+        );
       }
       //제목 정렬로 변경
       else {
-        this.searchCode(0, CodeProperty.name, this.state.order === 'asc');
+        this.searchCode(
+          this.state.viewType === CodeView.detail ? 0 : -1,
+          ShareCode.CodePropertyName.name,
+          this.state.orderDirection === 'asc'
+        );
       }
     }
     //select date order
     else {
       //current date order
-      if (this.state.orderOption === CodeProperty.date) {
+      if (this.state.orderOption === ShareCode.CodePropertyName.date) {
         //정렬 순서 변경
-        this.searchCode(0, this.state.orderOption, this.state.order !== 'asc');
+        this.searchCode(
+          this.state.viewType === CodeView.detail ? 0 : -1,
+          this.state.orderOption,
+          this.state.orderDirection !== 'asc'
+        );
       }
       //change to date order
       else {
-        this.searchCode(0, CodeProperty.date, this.state.order === 'asc');
+        this.searchCode(
+          this.state.viewType === CodeView.detail ? 0 : -1,
+          ShareCode.CodePropertyName.date,
+          this.state.orderDirection === 'asc'
+        );
       }
     }
   }; //changeOrderOption
 
   //change order
   changeOrder = (e: any) => {
-    this.searchCode(0, this.state.orderOption, this.state.order !== 'asc');
+    this.searchCode(
+      this.state.viewType === CodeView.detail ? 0 : -1,
+      this.state.orderOption,
+      this.state.orderDirection !== 'asc'
+    );
   };
 
-  newCode = (e: any) => {
-    Ankus.ankusPlugin.openCodeEditor();
+  //change view mode
+  changeCodeView = (viewType: CodeView) => {
+    this.setState({ viewType: viewType });
+
+    this.searchCode(
+      viewType === CodeView.detail ? 0 : -1,
+      this.state.orderOption,
+      this.state.orderDirection === 'asc'
+    );
   };
 
   private __selectStyle = style({
@@ -355,38 +620,40 @@ export class CodelistWidget extends React.Component<ICodelistProp, IListState> {
   render(): React.ReactElement {
     return (
       <div className="ankus-code-list-wrap">
-        {/* website */}
+        {/* website, logout */}
         <div
-          className="ankus-ui-text"
-          style={{ display: 'grid', marginRight: '10px' }}
+          style={{
+            margin: '0 5px 10px 10px',
+            display: 'flex',
+            justifyContent: 'space-between'
+          }}
         >
-          <a
-            href={Ankus.ankusURL}
-            target="_blank"
-            style={{ display: 'flex', justifySelf: 'end' }}
-          >
-            <button className="ankus-icon-btn go-icon"></button>
-            Go to ankus website
-          </a>
-        </div>
+          {/* website */}
+          <div className="ankus-ui-text">
+            <a
+              href={Ankus.ankusURL}
+              target="_blank"
+              style={{ display: 'flex', justifySelf: 'end' }}
+            >
+              <button className="ankus-icon-btn go-icon"></button>
+              Go to ankus website
+            </a>
+          </div>
 
-        {/* new, logout */}
-        <div className="upper-row">
-          <span
-            className="ankus-ui-text"
-            onClick={this.newCode}
-            title="New Code"
-            style={{ display: 'flex' }}
-          >
-            <button className="ankus-icon-btn plus-icon"></button>Code
-          </span>
+          {/* logout */}
           <button
             className="ankus-icon-btn"
             title="Logout"
             onClick={this.props.logout}
             style={{ width: '24px', height: '20px' }}
           >
-            <AiOutlineLogout style={{ width: '16px', height: '16px' }} />
+            <AiOutlineLogout
+              style={{
+                width: '16px',
+                height: '16px',
+                color: 'var(--jp-ui-font-color2)'
+              }}
+            />
           </button>
         </div>
 
@@ -413,39 +680,80 @@ export class CodelistWidget extends React.Component<ICodelistProp, IListState> {
             onKeyDown={e => {
               if (e.key === 'Enter') {
                 this.searchCode(
-                  0,
+                  this.state.viewType === CodeView.detail ? 0 : -1,
                   this.state.orderOption,
-                  this.state.order === 'asc'
+                  this.state.orderDirection === 'asc'
                 );
               }
             }}
           ></input>
           <button
             className="search-btn"
-            onClick={e => {
+            onClick={() =>
               this.searchCode(
-                0,
+                this.state.viewType === CodeView.detail ? 0 : -1,
                 this.state.orderOption,
-                this.state.order === 'asc'
-              );
-            }}
+                this.state.orderDirection === 'asc'
+              )
+            }
             title="Filter code list"
           ></button>
         </div>
 
-        {/* <div className="search-result"> Search Results - {this._codeSize}</div> */}
-        <div className={this.resultStyle}> {this._searchResultDesc}</div>
+        {/* search result, view type */}
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          {/* search result */}
+          <this.SearchResult>{this.state.searchResult}</this.SearchResult>
 
+          {/* view type */}
+          <div style={{ padding: '10px 5px 0 0' }}>
+            {/* detail view */}
+            <this.ViewButton
+              className="ankus-icon-btn"
+              title="Detail"
+              onClick={() => this.changeCodeView(CodeView.detail)}
+            >
+              <AiOutlineAlignLeft
+                style={{
+                  color:
+                    this.state.viewType === CodeView.detail
+                      ? 'var(--jp-ui-font-color0)'
+                      : 'var(--jp-ui-font-color2)'
+                }}
+              />
+            </this.ViewButton>
+
+            {/* simple view */}
+            <this.ViewButton
+              className="ankus-icon-btn"
+              title="List"
+              onClick={() => this.changeCodeView(CodeView.simple)}
+            >
+              <AiOutlineBars
+                style={{
+                  color:
+                    this.state.viewType === CodeView.simple
+                      ? 'var(--jp-ui-font-color0)'
+                      : 'var(--jp-ui-font-color2)'
+                }}
+              />
+            </this.ViewButton>
+          </div>
+        </div>
+
+        {/* name/date order */}
         <div className="title">
           <div className="name-wrap" onClick={this.changeOrderOption}>
             <p>Name</p>
             <div
               // arrown up/down
-              className={this.state.order === 'asc' ? 'name-up' : 'name-down'}
+              className={
+                this.state.orderDirection === 'asc' ? 'name-up' : 'name-down'
+              }
               style={{
                 display:
                   //arrow show/hide
-                  this.state.orderOption === CodeProperty.name
+                  this.state.orderOption === ShareCode.CodePropertyName.name
                     ? 'block'
                     : 'none'
               }}
@@ -453,10 +761,12 @@ export class CodelistWidget extends React.Component<ICodelistProp, IListState> {
           </div>
           <div className="date-wrap" onClick={this.changeOrderOption}>
             <div
-              className={this.state.order === 'asc' ? 'date-up' : 'date-down'}
+              className={
+                this.state.orderDirection === 'asc' ? 'date-up' : 'date-down'
+              }
               style={{
                 display:
-                  this.state.orderOption === CodeProperty.date
+                  this.state.orderOption === ShareCode.CodePropertyName.date
                     ? 'block'
                     : 'none'
               }}
@@ -473,48 +783,85 @@ export class CodelistWidget extends React.Component<ICodelistProp, IListState> {
           {this.state.errMsg}
         </div>
         <div
-          className="list-container"
           style={{
+            height: 'calc(100% - 110px)',
             display: this._codeList.length > 0 ? 'block' : 'none'
           }}
         >
-          <div className="ankus-code-list">
-            <React.Fragment>
-              {this._codeList.map((item, index) => (
-                <CodeElement
-                  key={index}
-                  onClick={this.selectCode}
-                  codeobj={{
-                    name: item[CodeProperty.name],
-                    id: item[CodeProperty.id],
-                    comment: item[CodeProperty.comment],
-                    writer: item[CodeProperty.userName],
-                    date: item[CodeProperty.date],
-                    tag: item[CodeProperty.tag],
-                    writerNo: item[CodeProperty.userNo]
-                  }}
-                />
-              ))}
-            </React.Fragment>
-          </div>
+          <this.CodeList
+            style={{
+              maxHeight:
+                this.state.viewType === CodeView.detail
+                  ? 'calc(100% - 40px)'
+                  : '100%'
+            }}
+          >
+            {/* code list */}
+            {this._codeList.map((item, index) => (
+              <CodeElement
+                viewType={this.state.viewType}
+                key={index}
+                onClick={this.clbkSelectCode}
+                codeobj={{
+                  name: item.name,
+                  id: item.id,
+                  comment: item.comment,
+                  writer: item.writer,
+                  date: item.date,
+                  tag: item.tag,
+                  writerNo: item.writerNo
+                }}
+                select={this.state.selection?.prop.id === item.id}
+              />
+            ))}
+          </this.CodeList>
+
+          {/* rename dialog */}
+          <RenameDialog
+            name={
+              this.state.selection?.prop.name === undefined
+                ? ''
+                : this.state.selection!.prop.name
+            }
+            open={this.state.openRename}
+            onClose={this.clbkCloseRename}
+          />
+
+          {/* code property dialog */}
+          <CodePropDlg
+            open={this.state.openProp}
+            //코드 작성자와 현재 사용자가 동일하면, 수정 가능
+            editable={this.state.selection?.prop.writerNo === Ankus.userNumber}
+            prop={this.state.selection?.prop}
+            content={
+              this.state.selection?.content === undefined
+                ? []
+                : this.state.selection!.content
+            }
+            onClose={(save, taglist, desc) =>
+              this.clbkCloseProp(save, taglist, desc)
+            }
+          />
 
           {/* page navigation */}
-          <div className="page">
-            <button
-              onClick={this.prevPage}
-              disabled={this.state.page === 0}
-              title="Prev"
-            ></button>
-            {this.state.page + 1}/{Math.ceil(this._codeSize / this._pageSize)}
-            <button
-              onClick={this.nextPage}
-              disabled={
-                this.state.page + 1 ===
-                Math.ceil(this._codeSize / this._pageSize)
-              }
-              title="Next"
-            ></button>
-          </div>
+          {this.state.viewType === CodeView.detail ? (
+            <div className="page">
+              <button
+                onClick={this.prevPage}
+                disabled={this.state.pageNo === 0}
+                title="Prev"
+              ></button>
+              {this.state.pageNo + 1}/{this.state.pageSize}
+              {/* {Math.ceil(this.state.codeSize / this.state.pageSize)} */}
+              <button
+                onClick={this.nextPage}
+                disabled={this.state.pageNo + 1 === this.state.pageSize}
+                title="Next"
+              ></button>
+            </div>
+          ) : (
+            ''
+          )}
 
           <div
             style={{

@@ -13,11 +13,11 @@ import {
 } from '@jupyterlab/ui-components';
 
 import '../../style/codecontent.css';
-import { CellData } from '../doc/docModel';
+import { NotebookPlugin } from '../notebookAction';
 
 export interface ICodeCell {
   //type, source
-  data: Array<CellData>;
+  data: Array<NotebookPlugin.CellData>;
   //편집 여부
   edit: Array<boolean>;
   //선택된 셀 번호

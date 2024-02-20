@@ -21,6 +21,7 @@
     display: flex;
 }
 
+/* new term in dictionary */
 .ankus-completer-new-term {
     width : calc(100% - 4px);
     height : 25px;
@@ -48,6 +49,7 @@
     font-weight: 500;
 }
 
+/* icon button */
 .ankus-icon-btn {
     background-color: transparent;
     color: var(--ankus-control-color);
@@ -65,3 +67,65 @@
     color: var(--ankus-disable-color);
     cursor: auto;
 }
+
+.ankus-autocomplet-menu {
+    position: fixed;
+    z-index: 99;
+    background-color: var(--jp-layout-color0); 
+    border: 1px solid var(--jp-border-color1);
+    color: var(--jp-ui-font-color1);
+    min-width: 150px;
+    max-width: 400px;
+    padding: 0;
+    /* overflow-y: auto; */
+}
+.ankus-autocomplet-menu dl {
+    padding: 0;
+    margin: 3px 0;
+}
+.ankus-autocomplet-menu dl>dt {
+    padding: 3px 10px;
+}
+/* menu item description */
+.ankus-autocomplet-menu dl dd {
+    font-size: 11px;
+    max-height: 30px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--jp-ui-font-color2);
+}
+/* hover menu item */
+.ankus-autocomplet-menu dl>dt:hover {
+    background-color: var(--jp-layout-color2);
+}
+/* select menu item */
+.ankus-autocomplet-menu .sel-menu {
+    background-color: var(--jp-brand-color1);
+    color: var(--jp-ui-inverse-font-color1);
+}
+/* menu item - code name */
+.ankus-autocomplet-menu dl>dt>span:nth-child(1) {
+    color: var(--jp-brand-color1);
+}
+.ankus-autocomplet-menu .sel-menu>span:nth-child(1) {
+    color: var(--jp-ui-inverse-font-color0);
+}
+
+.ankus-editor-icon .cls-1 {
+    fill: var(--jp-inverse-layout-color2);
+}
+
+.ankus-info-on-ntbk {
+    padding: 5;
+    position: fixed;
+    z-index: 99;
+    opacity: 0.8;
+    color: var(--jp-info-color0);
+    background-color: var(--jp-inverse-layout-color3);
+}
+
+/* .ankus-code-menu .lm-Menu-itemIcon > svg {
+    position: relative;
+    top: 3px;
+} */

@@ -304,19 +304,16 @@ class CategoryBar extends React.Component<ISettingValue, ICatlistState> {
     if (catid !== 0) {
       this.setState({ loadingWords: true });
 
-      try {
-        this.setState({
-          wordlist: await StandardTermPart.searchWords(
-            StandardTermPart.Field.engName,
-            keyword,
-            StandardTermPart.Field.engName,
-            true,
-            catid
-          )
-        });
-      } catch (e) {
-        this.setState({ wordlist: undefined });
-      }
+      const lst = await StandardTermPart.searchWords(
+        StandardTermPart.Field.engName,
+        keyword,
+        StandardTermPart.Field.engName,
+        true,
+        catid
+      );
+      this.setState({
+        wordlist: lst === null ? undefined : lst
+      });
 
       this.setState({ loadingWords: false });
     }
